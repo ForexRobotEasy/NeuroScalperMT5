@@ -1,0 +1,95 @@
+
+// NeuroScalperMT5 - Forex Robot Easy Team
+// Developer's Site: forexroboteasy.com
+
+// Include necessary libraries
+#include <Trade\Trade.mqh>
+#include <Neuro\Neuro.mqh>
+
+// Define constants
+#define SYMBOL 'EURUSD'  // Symbol to trade
+#define TIME_FRAME PERIOD_M1  // Time frame to analyze
+#define LOT_SIZE 0.01  // Fixed lot size for trading
+#define STOP_LOSS 50  // Stop loss value in pips
+
+// Initialize objects
+CTrade trade;
+CNeuro neuralNetwork;
+
+// Initialize function for Expert Advisor
+void OnTick()
+{
+   // Set neural network parameters
+   neuralNetwork.SetInputCount(4);  // Number of input parameters
+   neuralNetwork.SetOutputCount(1);  // Number of output parameters
+   neuralNetwork.SetHiddenLayerCount(1);  // Number of hidden layers
+   neuralNetwork.SetNeuronsCount(1, 4);  // Number of neurons in hidden layer
+
+   // Load neural network weights
+   neuralNetwork.LoadWeights('neural_network_weights.txt');
+
+   // Get current bar data
+   MqlRates rates[];
+   CopyRates(Symbol(), TIME_FRAME, 0, 1, rates);
+
+   // Prepare input data for neural network
+   double inputs[];
+   ArraySetAsSeries(inputs, true);
+   ArrayResize(inputs, 4);
+   for(int i = 0; i < 4; i++)
+      inputs[i] = rates[i].close;
+
+   // Calculate neural network output
+   double output = neuralNetwork.Calculate(inputs);
+
+   // Check if neural network generated a buy signal
+   if(output > 0.5)
+   {
+      // Open a buy trade
+      trade.Buy(LOT_SIZE);
+      trade.SetStopLoss(STOP_LOSS);
+   }
+   // Check if neural network generated a sell signal
+   else if(output < -0.5)
+   {
+      // Open a sell trade
+      trade.Sell(LOT_SIZE);
+      trade.SetStopLoss(STOP_LOSS);
+   }
+}
+
+// Initialize function for Indicator
+void OnCalculate(const int rates_total, const int prev_calculated, const datetime &time[], const double &open[], const double &high[], const double &low[], const double &close[], const long &tick_volume[], const long &volume[], const int &spread[])
+{
+   // Set neural network parameters
+   neuralNetwork.SetInputCount(4);  // Number of input parameters
+   neuralNetwork.SetOutputCount(1);  // Number of output parameters
+   neuralNetwork.SetHiddenLayerCount(1);  // Number of hidden layers
+   neuralNetwork.SetNeuronsCount(1, 4);  // Number of neurons in hidden layer
+
+   // Load neural network weights
+   neuralNetwork.LoadWeights('neural_network_weights.txt');
+
+   // Prepare input data for neural network
+   double inputs[];
+   ArraySetAsSeries(inputs, true);
+   ArrayResize(inputs, 4);
+   for(int i = 0; i < 4; i++)
+      inputs[i] = close[i];
+
+   // Calculate neural network output
+   double output = neuralNetwork.Calculate(inputs);
+
+   // Check if neural network generated a buy signal
+   if(output > 0.5)
+   {
+      // Display a green arrow indicating a buy signal
+      ChartIndicatorAdd(0, 0, SYMBOL, NULL, NULL, 0, 1, clrGreen);
+   }
+   // Check if neural network generated a sell signal
+   else if(output < -0.5)
+   {
+      // Display a red arrow indicating a sell signal
+      ChartIndicatorAdd(0, 0, SYMBOL, NULL, NULL, 1, 1, clrRed);
+   }
+}
